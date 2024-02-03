@@ -20,7 +20,7 @@ let package = Package(
     dependencies: [
         .package(
             url: "https://github.com/swift-bloc/bloc",
-            from: "1.0.0"
+            branch: "main"
         ),
         .package(
             url: "https://github.com/apple/swift-docc-plugin",
@@ -30,7 +30,9 @@ let package = Package(
     targets: [
         .target(
             name: "SwiftUIBloc",
-            dependencies: ["Bloc"]
+            dependencies: [
+                .product(name: "Bloc", package: "bloc")
+            ]
         ),
         .testTarget(
             name: "SwiftUIBlocTests",

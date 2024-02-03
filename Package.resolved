@@ -1,6 +1,15 @@
 {
   "pins" : [
     {
+      "identity" : "bloc",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/swift-bloc/bloc",
+      "state" : {
+        "branch" : "main",
+        "revision" : "1ae14e4fc8acc804d2895c17a27a1daa43276061"
+      }
+    },
+    {
       "identity" : "swift-docc-plugin",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/apple/swift-docc-plugin",
