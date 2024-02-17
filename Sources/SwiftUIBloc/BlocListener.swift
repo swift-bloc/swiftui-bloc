@@ -13,21 +13,21 @@ public typealias BlocViewListener<State: Sendable> = @Sendable (_ context: BlocC
 /// with the current `state`.
 public typealias BlocListenerCondition<State: Sendable> = @Sendable (_ previous: State, _ current: State) -> Bool
 
-public struct BlocListener<Bloc, State, Child: View>: View where Bloc: StateStreamable<State> & AnyObject {
+public struct BlocListener<Bloc, Child: View>: View where Bloc: StateStreamable & AnyObject {
 
     // MARK: - Private properties
 
     private let bloc: Bloc?
-    private let listener: BlocViewListener<State>
-    private let listenWhen: BlocListenerCondition<State>?
+    private let listener: BlocViewListener<Bloc.State>
+    private let listenWhen: BlocListenerCondition<Bloc.State>?
     private let child: () -> Child
 
     // MARK: - Inits
 
     public init(
         bloc: Bloc? = nil,
-        listener: @escaping BlocViewListener<State>,
-        listenWhen: BlocListenerCondition<State>? = nil,
+        listener: @escaping BlocViewListener<Bloc.State>,
+        listenWhen: BlocListenerCondition<Bloc.State>? = nil,
         @ViewBuilder child: @escaping () -> Child
     ) {
         self.bloc = bloc
@@ -38,8 +38,8 @@ public struct BlocListener<Bloc, State, Child: View>: View where Bloc: StateStre
 
     public init(
         bloc: Bloc? = nil,
-        listener: @escaping BlocViewListener<State>,
-        listenWhen: BlocListenerCondition<State>? = nil
+        listener: @escaping BlocViewListener<Bloc.State>,
+        listenWhen: BlocListenerCondition<Bloc.State>? = nil
     ) where Child == Never {
         self.bloc = bloc
         self.listener = listener
@@ -70,7 +70,7 @@ struct WeakReference<V: AnyObject> {
     }
 }
 
-struct BlocListenerBase<Bloc, State, Child: View>: View where Bloc: StateStreamable<State> & AnyObject {
+struct BlocListenerBase<Bloc, Child: View>: View where Bloc: StateStreamable & AnyObject {
 
     // MARK: - Private properties
 
@@ -95,7 +95,7 @@ struct BlocListenerBase<Bloc, State, Child: View>: View where Bloc: StateStreama
         }
     }
 
-    private var previousState: State {
+    private var previousState: Bloc.State {
         if let previousState = _previousState {
             return previousState
         }
@@ -108,8 +108,8 @@ struct BlocListenerBase<Bloc, State, Child: View>: View where Bloc: StateStreama
     }
 
     private let constantBlocValue: Bloc?
-    private let listener: BlocViewListener<State>
-    private let listenWhen: BlocListenerCondition<State>?
+    private let listener: BlocViewListener<Bloc.State>
+    private let listenWhen: BlocListenerCondition<Bloc.State>?
     private let child: () -> Child
 
     // MARK: - SwiftUI properties
@@ -121,7 +121,7 @@ struct BlocListenerBase<Bloc, State, Child: View>: View where Bloc: StateStreama
     @SwiftUI.State private var runningTask: Task<Void, Never>?
 
     @SwiftUI.State private var _bloc: WeakReference<Bloc>?
-    @SwiftUI.State private var _previousState: State?
+    @SwiftUI.State private var _previousState: Bloc.State?
 
     @Environment(\.blocContext) private var context
 
@@ -129,8 +129,8 @@ struct BlocListenerBase<Bloc, State, Child: View>: View where Bloc: StateStreama
 
     init(
         bloc: Bloc?,
-        listener: @escaping BlocViewListener<State>,
-        listenWhen: BlocListenerCondition<State>?,
+        listener: @escaping BlocViewListener<Bloc.State>,
+        listenWhen: BlocListenerCondition<Bloc.State>?,
         child: @escaping () -> Child
     ) {
         self.constantBlocValue = bloc

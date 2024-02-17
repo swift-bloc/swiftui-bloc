@@ -5,15 +5,15 @@
 import SwiftUI
 import Bloc
 
-public struct BlocConsumer<Bloc, State, Child: View>: View where Bloc: StateStreamable<State> & AnyObject {
+public struct BlocConsumer<Bloc, Child: View>: View where Bloc: StateStreamable & AnyObject {
 
     // MARK: - Private properties
 
     private let bloc: Bloc?
-    private let listenWhen: BlocListenerCondition<State>?
-    private let buildWhen: BlocBuilderCondition<State>?
-    private let listener: BlocViewListener<State>
-    private let builder: BlocViewBuilder<State, Child>
+    private let listenWhen: BlocListenerCondition<Bloc.State>?
+    private let buildWhen: BlocBuilderCondition<Bloc.State>?
+    private let listener: BlocViewListener<Bloc.State>
+    private let builder: BlocViewBuilder<Bloc.State, Child>
 
     // MARK: - SwiftUI properties
 
@@ -23,10 +23,10 @@ public struct BlocConsumer<Bloc, State, Child: View>: View where Bloc: StateStre
 
     public init(
         bloc: Bloc? = nil,
-        buildWhen: BlocBuilderCondition<State>? = nil,
-        listenWhen: BlocListenerCondition<State>? = nil,
-        listener: @escaping BlocViewListener<State>,
-        @ViewBuilder builder: @escaping BlocViewBuilder<State, Child>
+        buildWhen: BlocBuilderCondition<Bloc.State>? = nil,
+        listenWhen: BlocListenerCondition<Bloc.State>? = nil,
+        listener: @escaping BlocViewListener<Bloc.State>,
+        @ViewBuilder builder: @escaping BlocViewBuilder<Bloc.State, Child>
     ) {
         self.bloc = bloc
         self.buildWhen = buildWhen

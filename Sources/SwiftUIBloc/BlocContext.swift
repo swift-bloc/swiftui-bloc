@@ -43,7 +43,7 @@ private struct BlocContextEnvironmentKey: EnvironmentKey {
 
 extension EnvironmentValues {
 
-    public fileprivate(set) var blocContext: BlocContext {
+    public internal(set) var blocContext: BlocContext {
         get { self[BlocContextEnvironmentKey.self] }
         set { self[BlocContextEnvironmentKey.self] = newValue }
     }

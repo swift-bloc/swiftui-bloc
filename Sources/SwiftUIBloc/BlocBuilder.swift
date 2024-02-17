@@ -30,20 +30,20 @@ public typealias BlocViewBuilder<State, Content: View> = @Sendable  (_ context: 
 /// determines whether to rebuild [BlocBuilder] with the current `state`.
 public typealias BlocBuilderCondition<State> = @Sendable (_ previous: State, _ current: State) -> Bool
 
-public struct BlocBuilder<Bloc, State, Child: View>: View where Bloc: StateStreamable<State> & AnyObject {
+public struct BlocBuilder<Bloc, Child: View>: View where Bloc: StateStreamable & AnyObject {
 
     // MARK: - Private properties
 
-    private let builder: BlocViewBuilder<State, Child>
+    private let builder: BlocViewBuilder<Bloc.State, Child>
     private let bloc: Bloc?
-    private let buildWhen: BlocBuilderCondition<State>?
+    private let buildWhen: BlocBuilderCondition<Bloc.State>?
 
     // MARK: - Inits
 
     public init(
         bloc: Bloc? = nil,
-        buildWhen: BlocBuilderCondition<State>? = nil,
-        @ViewBuilder builder: @escaping BlocViewBuilder<State, Child>
+        buildWhen: BlocBuilderCondition<Bloc.State>? = nil,
+        @ViewBuilder builder: @escaping BlocViewBuilder<Bloc.State, Child>
     ) {
         self.builder = builder
         self.bloc = bloc
@@ -61,7 +61,7 @@ public struct BlocBuilder<Bloc, State, Child: View>: View where Bloc: StateStrea
     }
 }
 
-private struct BlocBuilderBase<Bloc, State, Child: View>: View where Bloc: StateStreamable<State> & AnyObject {
+private struct BlocBuilderBase<Bloc, Child: View>: View where Bloc: StateStreamable & AnyObject {
 
     // MARK: - Private properties
 
@@ -86,7 +86,7 @@ private struct BlocBuilderBase<Bloc, State, Child: View>: View where Bloc: State
         }
     }
 
-    private var state: State {
+    private var state: Bloc.State {
         if let state = _state {
             return state
         }
@@ -99,25 +99,25 @@ private struct BlocBuilderBase<Bloc, State, Child: View>: View where Bloc: State
     }
 
     private let constantBlocValue: Bloc?
-    private let buildWhen: BlocBuilderCondition<State>?
-    private let builder: BlocViewBuilder<State, Child>
+    private let buildWhen: BlocBuilderCondition<Bloc.State>?
+    private let builder: BlocViewBuilder<Bloc.State, Child>
 
     // MARK: - SwiftUI properties
 
-    @SwiftUI.State private var blocID = UUID()
-    @SwiftUI.State private var stateID = UUID()
+    @State private var blocID = UUID()
+    @State private var stateID = UUID()
 
-    @SwiftUI.State private var _state: State?
-    @SwiftUI.State private var _bloc: WeakReference<Bloc>?
+    @State private var _state: Bloc.State?
+    @State private var _bloc: WeakReference<Bloc>?
 
     @Environment(\.blocContext) private var context
 
     // MARK: - Inits
 
     init(
-        builder: @escaping BlocViewBuilder<State, Child>,
+        builder: @escaping BlocViewBuilder<Bloc.State, Child>,
         bloc: Bloc? = nil,
-        buildWhen: BlocBuilderCondition<State>? = nil
+        buildWhen: BlocBuilderCondition<Bloc.State>? = nil
     ) {
         self.builder = builder
         self.constantBlocValue = bloc
