@@ -5,28 +5,13 @@
 import SwiftUI
 import Bloc
 
-public typealias BlocViewListener<State: Sendable> = @Sendable (State) -> Void
+public typealias BlocViewListener<State: Sendable> = @Sendable (_ context: BlocContext, _ state: State) -> Void
 
 /// Signature for the `listenWhen` function which takes the previous `state`
 /// and the current `state` and is responsible for returning a [bool] which
 /// determines whether or not to call [BlocViewListener] of [BlocListener]
 /// with the current `state`.
-public typealias BlocListenerCondition<State: Sendable> = @Sendable (BlocListenerConditionInput<State>) -> Bool
-
-public struct BlocListenerConditionInput<State: Sendable>: Sendable {
-
-    // MARK: - Public properties
-
-    public let previous: State
-    public let current: State
-
-    // MARK: - Inits
-
-    init(previous: State, current: State) {
-        self.previous = previous
-        self.current = current
-    }
-}
+public typealias BlocListenerCondition<State: Sendable> = @Sendable (_ previous: State, _ current: State) -> Bool
 
 public struct BlocListener<Bloc, State, Child: View>: View where Bloc: StateStreamable<State> & AnyObject {
 
@@ -164,8 +149,8 @@ struct BlocListenerBase<Bloc, State, Child: View>: View where Bloc: StateStreama
                         while true {
                             do {
                                 for try await state in bloc.stream {
-                                    if listenWhen?(.init(previous: previousState, current: state)) ?? true {
-                                        listener(state)
+                                    if listenWhen?(previousState, state) ?? true {
+                                        listener(context, state)
                                     }
 
                                     _previousState = state

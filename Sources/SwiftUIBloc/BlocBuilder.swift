@@ -8,41 +8,27 @@ import Bloc
 /// Signature for the `builder` function which takes the `BuildContext` and
 /// [state] and is responsible for returning a view which is to be rendered.
 /// This is analogous to the `builder` function in [StreamBuilder].
-public typealias BlocViewBuilder<State, Content: View> = @Sendable  (BlocViewBuilderInput<State>) -> Content
+public typealias BlocViewBuilder<State, Content: View> = @Sendable  (_ context: BlocContext, _ state: State) -> Content
 
-public struct BlocViewBuilderInput<State: Sendable>: Sendable {
+//public struct BlocViewBuilderInput<State: Sendable>: Sendable {
+//
+//    // MARK: - Public properties
+//
+//    public let context: BlocContext
+//    public let state: State
+//
+//    // MARK: - Inits
+//
+//    init(context: BlocContext, state: State) {
+//        self.context = context
+//        self.state = state
+//    }
+//}
 
-    // MARK: - Public properties
-
-    public let context: BlocContext
-    public let state: State
-
-    // MARK: - Inits
-
-    init(context: BlocContext, state: State) {
-        self.context = context
-        self.state = state
-    }
-}
 /// Signature for the `buildWhen` function which takes the previous `state` and
 /// the current `state` and is responsible for returning a [bool] which
 /// determines whether to rebuild [BlocBuilder] with the current `state`.
-public typealias BlocBuilderCondition<State> = @Sendable (BlocBuilderConditionInput<State>) -> Bool
-
-public struct BlocBuilderConditionInput<State: Sendable>: Sendable {
-
-    // MARK: - Public properties
-
-    public let previous: State
-    public let current: State
-
-    // MARK: - Inits
-
-    init(previous: State, current: State) {
-        self.previous = previous
-        self.current = current
-    }
-}
+public typealias BlocBuilderCondition<State> = @Sendable (_ previous: State, _ current: State) -> Bool
 
 public struct BlocBuilder<Bloc, State, Child: View>: View where Bloc: StateStreamable<State> & AnyObject {
 
@@ -55,9 +41,9 @@ public struct BlocBuilder<Bloc, State, Child: View>: View where Bloc: StateStrea
     // MARK: - Inits
 
     public init(
-        @ViewBuilder builder: @escaping BlocViewBuilder<State, Child>,
         bloc: Bloc? = nil,
-        buildWhen: BlocBuilderCondition<State>? = nil
+        buildWhen: BlocBuilderCondition<State>? = nil,
+        @ViewBuilder builder: @escaping BlocViewBuilder<State, Child>
     ) {
         self.builder = builder
         self.bloc = bloc
@@ -112,9 +98,9 @@ private struct BlocBuilderBase<Bloc, State, Child: View>: View where Bloc: State
         return state
     }
 
-    private let builder: BlocViewBuilder<State, Child>
     private let constantBlocValue: Bloc?
     private let buildWhen: BlocBuilderCondition<State>?
+    private let builder: BlocViewBuilder<State, Child>
 
     // MARK: - SwiftUI properties
 
@@ -142,17 +128,11 @@ private struct BlocBuilderBase<Bloc, State, Child: View>: View where Bloc: State
 
     var body: some View {
         BlocListener(
-            bloc: constantBlocValue,
-            listener: { _state = $0 },
-            listenWhen: {
-                if let buildWhen = buildWhen {
-                    return { buildWhen(.init(previous: $0.previous, current: $0.current)) }
-                } else {
-                    return nil
-                }
-            }(),
+            bloc: bloc,
+            listener: { _state = $1 },
+            listenWhen: buildWhen,
             child: {
-                builder(.init(context: context, state: state))
+                builder(context, state)
             }
         )
     }
