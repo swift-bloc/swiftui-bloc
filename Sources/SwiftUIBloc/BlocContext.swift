@@ -14,8 +14,10 @@ public struct BlocContext: Sendable {
 
     init() {}
 
-    func register<B: Sendable>(loader: @escaping @Sendable () -> B) -> Self {
-        let id = ObjectIdentifier(B.self)
+    func register(
+        _ loader: @escaping @Sendable () -> Sendable,
+        id: ObjectIdentifier
+    ) -> Self {
         if handlers[id] != nil {
             fatalError("TODO: - Already registered")
         }
@@ -49,26 +51,69 @@ extension EnvironmentValues {
     }
 }
 
-private struct BlocContextModifier<B: Sendable>: ViewModifier {
+private struct BlocContextModifier: ViewModifier {
 
-    @State var loaded: B?
+    @State var loaded: Sendable?
 
     @Environment(\.blocContext) var context
-    let loader: @Sendable (BlocContext) -> B
+    let id: ObjectIdentifier
+    let loader: @Sendable (BlocContext) -> Sendable
 
     func body(content: Content) -> some View {
         content
-            .environment(\.blocContext, context.register { () -> B in
+            .environment(\.blocContext, context.register({
                 let bloc = loaded ?? loader(context)
                 loaded = bloc
                 return bloc
-            })
+            }, id: id))
     }
 }
 
 extension View {
 
-    func registerBloc<B: Sendable>(_ loader: @escaping @Sendable (BlocContext) -> B) -> some View {
-        modifier(BlocContextModifier(loader: loader))
+    func registerBloc(id: ObjectIdentifier, loader: @escaping @Sendable (BlocContext) -> Sendable) -> some View {
+        modifier(BlocContextModifier(id: id, loader: loader))
+    }
+}
+
+
+private struct MultiBlocContextModifier: ViewModifier {
+
+    let payload: [ObjectIdentifier: @Sendable (BlocContext) -> Sendable]
+
+    @Environment(\.blocContext) var context
+    @State var blocs: [ObjectIdentifier: Sendable] = [:]
+
+    func body(content: Content) -> some View {
+        content.environment(\.blocContext, registerAll(context))
+    }
+
+    func registerAll(_ context: BlocContext) -> BlocContext {
+        var context = context
+
+        for key in Set(blocs.keys).subtracting(Set(payload.keys)) {
+            blocs[key] = nil
+        }
+
+        for entry in payload {
+            context = context.register({ [context] in
+                if let entry = blocs[entry.key] {
+                    return entry
+                } else {
+                    let bloc = entry.value(context)
+                    blocs[entry.key] = bloc
+                    return bloc
+                }
+            }, id: entry.0)
+        }
+
+        return context
+    }
+}
+
+extension View {
+
+    func registerMultiBlocs(_ payload: [ObjectIdentifier: @Sendable (BlocContext) -> Sendable]) -> some View {
+        modifier(MultiBlocContextModifier(payload: payload))
     }
 }

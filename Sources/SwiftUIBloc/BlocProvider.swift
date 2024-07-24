@@ -7,57 +7,64 @@ import Bloc
 
 public typealias Create<T> = @Sendable (BlocContext) -> T
 
-public struct BlocProvider<Bloc, Child: View>: View where Bloc: StateStreamable {
+public struct BlocProvider<Child: View>: View {
 
     enum Loader {
-        case create(Create<Bloc>)
-        case constant(Bloc)
+        case create(Create<Sendable>)
+        case constant(Sendable)
     }
 
-    private let loader: Loader
+    let id: ObjectIdentifier
+    let loader: Loader
     private let child: () -> Child
 
-    public init(
+    public init<Bloc>(
         create: @escaping Create<Bloc>,
         @ViewBuilder child: @escaping () -> Child
-    ) {
+    ) where Bloc: StateStreamable {
         self.init(
+            id: ObjectIdentifier(Bloc.self),
             loader: .create(create),
             child: child
         )
     }
 
-    public init(
+    public init<Bloc>(
         create: @escaping Create<Bloc>
-    ) where Child == Never {
+    ) where Child == Never, Bloc: StateStreamable {
         self.init(
+            id: ObjectIdentifier(Bloc.self),
             loader: .create(create),
             child: { fatalError("TODO") }
         )
     }
 
     private init(
+        id: ObjectIdentifier,
         loader: Loader,
         child: @escaping () -> Child
     ) {
         self.loader = loader
         self.child = child
+        self.id = id
     }
 
-    public static func value(
+    public static func value<Bloc>(
         value: Bloc,
         @ViewBuilder child: @escaping () -> Child
-    ) -> Self {
+    ) -> Self where Bloc: StateStreamable {
         self.init(
+            id: ObjectIdentifier(Bloc.self),
             loader: .constant(value),
             child: child
         )
     }
 
-    public static func value(
+    public static func value<Bloc>(
         value: Bloc
-    ) -> Self where Child == Never {
+    ) -> Self where Child == Never, Bloc: StateStreamable {
         self.init(
+            id: ObjectIdentifier(Bloc.self),
             loader: .constant(value),
             child: { fatalError("TODO") }
         )
@@ -65,12 +72,12 @@ public struct BlocProvider<Bloc, Child: View>: View where Bloc: StateStreamable 
 
     public var body: some View {
         child()
-            .registerBloc { context -> Bloc in
+            .registerBloc(id: id) { context in
                 return register(context)
             }
     }
 
-    func register(_ context: BlocContext) -> Bloc {
+    private func register(_ context: BlocContext) -> Any {
         switch loader {
         case .create(let create):
             return create(context)
